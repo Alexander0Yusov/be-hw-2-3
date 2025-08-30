@@ -3,6 +3,8 @@ import { jwtService } from '../adapters/jwt.service';
 import { ResultStatus } from '../../core/result/resultCode';
 import { Result } from '../../core/result/result.type';
 import { bcryptService } from '../adapters/bcrypt.service';
+import { add } from 'date-fns';
+import { v4 as uuidv4 } from 'uuid';
 
 import { usersRepository } from '../../4-users/repository/users.repository';
 import { User } from '../../4-users/types/user';
@@ -85,15 +87,60 @@ export const authService = {
     }
   },
 
-  async confirmEmail(code: string): Promise<boolean> {
-    // поиск по коду
+  async confirmEmail(code: string): Promise<Result<true | null>> {
+    const user = await usersRepository.findByCode(code);
 
-    // условие на совпадение кода и времени экспирации
-    if (true) {
-      // исправление статуса
-      return true;
+    if (!user || user!.emailConfirmation.expirationDate < new Date() || user!.emailConfirmation.isConfirmed) {
+      return {
+        status: ResultStatus.BadRequest,
+        errorMessage: 'BadRequest',
+        extensions: [{ field: 'Code', message: 'The confirmation code is not found, expired or already been applied' }],
+        data: null,
+      };
     }
 
-    return false;
+    await usersRepository.confirmEmail(code);
+
+    return {
+      status: ResultStatus.NoContent,
+      data: true,
+      extensions: [],
+    };
+  },
+
+  async resendConfirmationCode(email: string): Promise<Result<true | null>> {
+    const user = await usersRepository.findByEmailOrLogin(email);
+
+    if (!user) {
+      return {
+        status: ResultStatus.BadRequest,
+        errorMessage: 'BadRequest',
+        extensions: [{ field: 'Email', message: 'Email not found' }],
+        data: null,
+      };
+    }
+
+    if (user.emailConfirmation.isConfirmed) {
+      return {
+        status: ResultStatus.BadRequest,
+        errorMessage: 'BadRequest',
+        extensions: [{ field: 'Email', message: 'Email already been confirmed' }],
+        data: null,
+      };
+    }
+
+    const newCode = uuidv4();
+
+    // устанавливаем новый код и время экспирации
+    await usersRepository.prolongationConfirmationCode(email, newCode, add(new Date(), { hours: 1 }));
+
+    // отправляем письмо на почту
+    await nodemailerService.sendEmail(email, newCode, emailExamples.registrationEmail);
+
+    return {
+      status: ResultStatus.NoContent,
+      data: true,
+      extensions: [],
+    };
   },
 };

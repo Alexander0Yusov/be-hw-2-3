@@ -15,6 +15,16 @@ export const usersRepository = {
     return null;
   },
 
+  async findByCode(code: string): Promise<WithId<User> | null> {
+    const user = await db.getCollections().userCollection.findOne({ 'emailConfirmation.confirmationCode': code });
+
+    if (user) {
+      return user;
+    }
+
+    return null;
+  },
+
   async findByEmailOrLogin(loginOrEmail: string): Promise<WithId<User> | null> {
     const user = await db.getCollections().userCollection.findOne({
       $or: [{ 'accountData.login': loginOrEmail }, { 'accountData.email': loginOrEmail }],
@@ -41,5 +51,30 @@ export const usersRepository = {
     if (deleteResult.deletedCount < 1) {
       throw new Error('Blog not exist');
     }
+  },
+
+  async confirmEmail(code: string): Promise<string | null> {
+    const user = await db
+      .getCollections()
+      .userCollection.findOneAndUpdate(
+        { 'emailConfirmation.confirmationCode': code },
+        { $set: { 'emailConfirmation.isConfirmed': true } },
+      );
+
+    return user?._id.toString() || null;
+  },
+
+  async prolongationConfirmationCode(email: string, newCode: string, newExpiration: Date): Promise<string | null> {
+    const user = await db.getCollections().userCollection.findOneAndUpdate(
+      { 'accountData.email': email },
+      {
+        $set: {
+          'emailConfirmation.confirmationCode': newCode,
+          'emailConfirmation.expirationDate': newExpiration,
+        },
+      },
+    );
+
+    return user?._id.toString() || null;
   },
 };

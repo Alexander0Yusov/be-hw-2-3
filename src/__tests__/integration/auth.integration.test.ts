@@ -37,8 +37,9 @@ describe('AUTH-INTEGRATION', () => {
       const result = await registerUserUseCase(login, pass, email);
 
       expect(result.status).toBe(ResultStatus.Success);
-      // expect(nodemailerService.sendEmail).toBeCalled();
-      // expect(nodemailerService.sendEmail).toBeCalledTimes(1);
+
+      expect(nodemailerService.sendEmail).toHaveBeenCalled();
+      expect(nodemailerService.sendEmail).toHaveBeenCalledTimes(1);
     });
 
     it('should not register user twice', async () => {

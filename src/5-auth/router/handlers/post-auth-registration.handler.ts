@@ -8,9 +8,10 @@ import { createErrorMessages } from '../../../core/utils/error.utils';
 export async function postAuthRegistrationHandler(req: Request<{}, {}, RegistrationInputModel>, res: Response) {
   const { login, email, password } = req.body;
 
-  const user = await usersQwRepository.findByEmailOrLogin(login);
+  const existsLogin = await usersQwRepository.findByEmailOrLogin(login);
+  const existsEmail = await usersQwRepository.findByEmailOrLogin(email);
 
-  if (user) {
+  if (existsLogin || existsEmail) {
     res
       .status(HttpStatus.BadRequest)
       .send(createErrorMessages([{ field: 'Email or login', message: 'Email or login already exists' }]));
