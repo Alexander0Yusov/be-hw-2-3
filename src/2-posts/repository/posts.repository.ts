@@ -1,34 +1,30 @@
 import { ObjectId, WithId } from 'mongodb';
 import { PostInputDto } from '../dto/post-input.dto';
 import { Post } from '../types/post';
-import { postCollection } from '../../db/mongo.db';
+import { db } from '../../db/mongo.db';
 import { PostQueryInput } from '../router/input/blog-query.input';
 
 export const postsRepository = {
-  async findMany(
-    queryDto: PostQueryInput,
-  ): Promise<{ items: WithId<Post>[]; totalCount: number }> {
+  async findMany(queryDto: PostQueryInput): Promise<{ items: WithId<Post>[]; totalCount: number }> {
     const { pageNumber, pageSize, sortBy, sortDirection } = queryDto;
 
     const skip = (pageNumber - 1) * pageSize;
     const filter: any = {};
 
-    const items = await postCollection
-      .find(filter)
+    const items = await db
+      .getCollections()
+      .postCollection.find(filter)
       .sort({ [sortBy]: sortDirection })
       .skip(skip)
       .limit(pageSize)
       .toArray();
 
-    const totalCount = await postCollection.countDocuments(filter);
+    const totalCount = await db.getCollections().postCollection.countDocuments(filter);
 
     return { items, totalCount };
   },
 
-  async findManyById(
-    id: string,
-    queryDto: PostQueryInput,
-  ): Promise<{ items: WithId<Post>[]; totalCount: number }> {
+  async findManyById(id: string, queryDto: PostQueryInput): Promise<{ items: WithId<Post>[]; totalCount: number }> {
     const {
       pageNumber,
       pageSize,
@@ -46,30 +42,31 @@ export const postsRepository = {
 
     filter.blogId = new ObjectId(id);
 
-    const items = await postCollection
-      .find(filter)
+    const items = await db
+      .getCollections()
+      .postCollection.find(filter)
       .sort({ [sortBy]: sortDirection })
       .skip(skip)
       .limit(pageSize)
       .toArray();
 
-    const totalCount = await postCollection.countDocuments(filter);
+    const totalCount = await db.getCollections().postCollection.countDocuments(filter);
 
     return { items, totalCount };
   },
 
   async findById(id: string): Promise<WithId<Post> | null> {
-    return postCollection.findOne({ _id: new ObjectId(id) });
+    return db.getCollections().postCollection.findOne({ _id: new ObjectId(id) });
   },
 
   async create(post: Post): Promise<WithId<Post>> {
-    const insertedResult = await postCollection.insertOne(post);
+    const insertedResult = await db.getCollections().postCollection.insertOne(post);
 
     return { ...post, _id: insertedResult.insertedId };
   },
 
   async update(id: string, dto: PostInputDto, blogName: string): Promise<void> {
-    const updateResult = await postCollection.updateOne(
+    const updateResult = await db.getCollections().postCollection.updateOne(
       { _id: new ObjectId(id) },
       {
         $set: {
@@ -90,7 +87,7 @@ export const postsRepository = {
   },
 
   async delete(id: string): Promise<void> {
-    const deleteResult = await postCollection.deleteOne({
+    const deleteResult = await db.getCollections().postCollection.deleteOne({
       _id: new ObjectId(id),
     });
 

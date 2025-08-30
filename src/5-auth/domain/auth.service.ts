@@ -6,6 +6,9 @@ import { bcryptService } from '../adapters/bcrypt.service';
 
 import { usersRepository } from '../../4-users/repository/users.repository';
 import { User } from '../../4-users/types/user';
+import { usersService } from '../../4-users/application/users.service';
+import { nodemailerService } from '../adapters/nodemailer.service';
+import { emailExamples } from '../adapters/email-examples';
 
 export const authService = {
   async loginUser(loginOrEmail: string, password: string): Promise<Result<{ accessToken: string } | null>> {
@@ -39,7 +42,7 @@ export const authService = {
         extensions: [{ field: 'loginOrEmail', message: 'Not Found' }],
       };
 
-    const isPassCorrect = await bcryptService.checkPassword(password, user.passwordHash);
+    const isPassCorrect = await bcryptService.checkPassword(password, user.accountData.passwordHash);
 
     if (!isPassCorrect)
       return {
@@ -54,5 +57,43 @@ export const authService = {
       data: user,
       extensions: [],
     };
+  },
+
+  async registerUser(login: string, email: string, password: string): Promise<Result<WithId<User> | null>> {
+    const userId = await usersService.create({ login, email, password });
+    const user = await usersRepository.findById(userId);
+
+    try {
+      await nodemailerService.sendEmail(
+        user!.accountData.email,
+        user!.emailConfirmation.confirmationCode,
+        emailExamples.registrationEmail,
+      );
+
+      return {
+        status: ResultStatus.Success,
+        data: user,
+        extensions: [],
+      };
+    } catch (error) {
+      return {
+        status: ResultStatus.BadRequest,
+        data: null,
+        errorMessage: 'Bad Request',
+        extensions: [{ field: 'Internal error', message: 'Mail service error' }],
+      };
+    }
+  },
+
+  async confirmEmail(code: string): Promise<boolean> {
+    // поиск по коду
+
+    // условие на совпадение кода и времени экспирации
+    if (true) {
+      // исправление статуса
+      return true;
+    }
+
+    return false;
   },
 };

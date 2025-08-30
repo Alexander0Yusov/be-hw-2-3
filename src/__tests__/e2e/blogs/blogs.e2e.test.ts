@@ -6,7 +6,7 @@ import { HttpStatus } from '../../../core/types/HttpStatus';
 import { BLOGS_PATH, TESTING_PATH } from '../../../core/paths/paths';
 import { generateBasicAuthToken } from '../../utils/generateBasicAuthToken';
 import { BlogInputDto } from '../../../1-blogs/dto/blog-input.dto';
-import { runDB, stopDB } from '../../../db/mongo.db';
+import { db } from '../../../db/mongo.db';
 import { SETTINGS } from '../../../core/settings/settings';
 
 describe('Blog API', () => {
@@ -14,7 +14,7 @@ describe('Blog API', () => {
   setupApp(app);
 
   beforeAll(async () => {
-    await runDB(SETTINGS.MONGO_URL);
+    await db.run(SETTINGS.MONGO_URL);
 
     await request(app)
       .delete(TESTING_PATH + '/all-data')
@@ -22,7 +22,7 @@ describe('Blog API', () => {
   });
 
   afterAll(async () => {
-    await stopDB();
+    await db.stop();
   });
 
   it('should create blog; POST blogs', async () => {
@@ -45,9 +45,7 @@ describe('Blog API', () => {
       .send(createFakeBlog())
       .expect(HttpStatus.Created);
 
-    const blogListResponse = await request(app)
-      .get(BLOGS_PATH)
-      .expect(HttpStatus.Ok);
+    const blogListResponse = await request(app).get(BLOGS_PATH).expect(HttpStatus.Ok);
 
     expect(blogListResponse.body.items).toBeInstanceOf(Array);
     expect(blogListResponse.body.items.length).toBeGreaterThanOrEqual(2);
@@ -86,9 +84,7 @@ describe('Blog API', () => {
       .send(blogUpdateData)
       .expect(HttpStatus.NoContent);
 
-    const response = await request(app).get(
-      BLOGS_PATH + '/' + `${createResponse.body.id}`,
-    );
+    const response = await request(app).get(BLOGS_PATH + '/' + `${createResponse.body.id}`);
 
     expect(response.body).toEqual({
       ...createResponse.body,
@@ -108,9 +104,7 @@ describe('Blog API', () => {
       .set('Authorization', generateBasicAuthToken())
       .expect(HttpStatus.NoContent);
 
-    const blogResponse = await request(app).get(
-      BLOGS_PATH + '/' + `${createResponse.body.id}`,
-    );
+    const blogResponse = await request(app).get(BLOGS_PATH + '/' + `${createResponse.body.id}`);
 
     expect(blogResponse.status).toBe(HttpStatus.NotFound);
   });

@@ -5,7 +5,7 @@ import { HttpStatus } from '../../../core/types/HttpStatus';
 import { AUTH_PATH, BLOGS_PATH, COMMENTS_PATH, POSTS_PATH, TESTING_PATH, USERS_PATH } from '../../../core/paths/paths';
 import { generateBasicAuthToken } from '../../utils/generateBasicAuthToken';
 import { createFakePost } from '../../utils/posts/create-fake-post';
-import { runDB, stopDB } from '../../../db/mongo.db';
+import { db } from '../../../db/mongo.db';
 import { SETTINGS } from '../../../core/settings/settings';
 import { createFakeBlog } from '../../utils/blogs/create-fake-blog';
 import { createFakeUser } from '../../utils/users/create-fake-user';
@@ -15,7 +15,7 @@ describe('Comment API', () => {
   setupApp(app);
 
   beforeAll(async () => {
-    await runDB(SETTINGS.MONGO_URL);
+    await db.run(SETTINGS.MONGO_URL);
 
     await request(app)
       .delete(TESTING_PATH + '/all-data')
@@ -23,7 +23,7 @@ describe('Comment API', () => {
   });
 
   afterAll(async () => {
-    await stopDB();
+    await db.stop();
   });
 
   it('should create comment; POST comments', async () => {

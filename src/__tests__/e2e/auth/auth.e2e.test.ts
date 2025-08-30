@@ -4,7 +4,7 @@ import { setupApp } from '../../../setup-app';
 import { HttpStatus } from '../../../core/types/HttpStatus';
 import { AUTH_PATH, TESTING_PATH, USERS_PATH } from '../../../core/paths/paths';
 import { generateBasicAuthToken } from '../../utils/generateBasicAuthToken';
-import { runDB, stopDB } from '../../../db/mongo.db';
+import { db } from '../../../db/mongo.db';
 import { SETTINGS } from '../../../core/settings/settings';
 import { createFakeUser } from '../../utils/users/create-fake-user';
 
@@ -13,7 +13,7 @@ describe('Auth API', () => {
   setupApp(app);
 
   beforeAll(async () => {
-    await runDB(SETTINGS.MONGO_URL);
+    await db.run(SETTINGS.MONGO_URL);
 
     await request(app)
       .delete(TESTING_PATH + '/all-data')
@@ -21,7 +21,7 @@ describe('Auth API', () => {
   });
 
   afterAll(async () => {
-    await stopDB();
+    await db.stop();
   });
 
   it('should return status code 204; POST /auth', async () => {

@@ -1,11 +1,23 @@
 import { User } from '../types/user';
-import { userCollection } from '../../db/mongo.db';
+import { db } from '../../db/mongo.db';
 import { ObjectId, WithId } from 'mongodb';
 
 export const usersRepository = {
+  async findById(id: string): Promise<WithId<User> | null> {
+    const user = await db.getCollections().userCollection.findOne({
+      _id: new ObjectId(id),
+    });
+
+    if (user) {
+      return user;
+    }
+
+    return null;
+  },
+
   async findByEmailOrLogin(loginOrEmail: string): Promise<WithId<User> | null> {
-    const user = await userCollection.findOne({
-      $or: [{ login: loginOrEmail }, { email: loginOrEmail }],
+    const user = await db.getCollections().userCollection.findOne({
+      $or: [{ 'accountData.login': loginOrEmail }, { 'accountData.email': loginOrEmail }],
     });
 
     if (user) {
@@ -16,13 +28,13 @@ export const usersRepository = {
   },
 
   async create(user: User): Promise<string> {
-    const insertedResult = await userCollection.insertOne(user);
+    const insertedResult = await db.getCollections().userCollection.insertOne(user);
 
     return insertedResult.insertedId.toString();
   },
 
   async delete(id: string): Promise<void> {
-    const deleteResult = await userCollection.deleteOne({
+    const deleteResult = await db.getCollections().userCollection.deleteOne({
       _id: new ObjectId(id),
     });
 

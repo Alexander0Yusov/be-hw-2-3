@@ -2,15 +2,11 @@ import request from 'supertest';
 import express from 'express';
 import { setupApp } from '../../../setup-app';
 import { HttpStatus } from '../../../core/types/HttpStatus';
-import {
-  BLOGS_PATH,
-  POSTS_PATH,
-  TESTING_PATH,
-} from '../../../core/paths/paths';
+import { BLOGS_PATH, POSTS_PATH, TESTING_PATH } from '../../../core/paths/paths';
 import { generateBasicAuthToken } from '../../utils/generateBasicAuthToken';
 import { createFakePost } from '../../utils/posts/create-fake-post';
 import { PostInputDto } from '../../../2-posts/dto/post-input.dto';
-import { runDB, stopDB } from '../../../db/mongo.db';
+import { db } from '../../../db/mongo.db';
 import { SETTINGS } from '../../../core/settings/settings';
 import { createFakeBlog } from '../../utils/blogs/create-fake-blog';
 
@@ -19,14 +15,14 @@ describe('Post API', () => {
   setupApp(app);
 
   beforeAll(async () => {
-    await runDB(SETTINGS.MONGO_URL);
+    await db.run(SETTINGS.MONGO_URL);
 
     await request(app)
       .delete(TESTING_PATH + '/all-data')
       .expect(HttpStatus.NoContent);
   });
   afterAll(async () => {
-    await stopDB();
+    await db.stop();
   });
   it('should create post; POST posts', async () => {
     const createdBlog = await request(app)
@@ -60,9 +56,7 @@ describe('Post API', () => {
       .send(createFakePost(createdBlog.body.id))
       .expect(HttpStatus.Created);
 
-    const postListResponse = await request(app)
-      .get(POSTS_PATH)
-      .expect(HttpStatus.Ok);
+    const postListResponse = await request(app).get(POSTS_PATH).expect(HttpStatus.Ok);
 
     expect(postListResponse.body.items).toBeInstanceOf(Array);
     expect(postListResponse.body.items.length).toBeGreaterThanOrEqual(2);
@@ -120,9 +114,7 @@ describe('Post API', () => {
       .send(postUpdateData)
       .expect(HttpStatus.NoContent);
 
-    const response = await request(app).get(
-      POSTS_PATH + '/' + `${createdPost.body.id}`,
-    );
+    const response = await request(app).get(POSTS_PATH + '/' + `${createdPost.body.id}`);
 
     expect(response.body).toEqual({
       ...createdPost.body,
@@ -148,9 +140,7 @@ describe('Post API', () => {
       .set('Authorization', generateBasicAuthToken())
       .expect(HttpStatus.NoContent);
 
-    const response = await request(app).get(
-      POSTS_PATH + '/' + `${createResponse.body.id}`,
-    );
+    const response = await request(app).get(POSTS_PATH + '/' + `${createResponse.body.id}`);
 
     expect(response.status).toBe(HttpStatus.NotFound);
   });

@@ -1,6 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { Comment } from '../types/comment';
-import { commentCollection } from '../../db/mongo.db';
+import { db } from '../../db/mongo.db';
 import { CommentViewModel } from '../types/comment-view-model';
 import { CommentQueryInput } from '../router/input/blog-query.input';
 import { CommentInputDto } from '../dto/comment-input.dto';
@@ -15,14 +15,15 @@ export const commentsRepository = {
 
     filter.postId = new ObjectId(id);
 
-    const items = await commentCollection
-      .find(filter)
+    const items = await db
+      .getCollections()
+      .commentCollection.find(filter)
       .sort({ [sortBy]: sortDirection })
       .skip(skip)
       .limit(pageSize)
       .toArray();
 
-    const totalCount = await commentCollection.countDocuments(filter);
+    const totalCount = await db.getCollections().commentCollection.countDocuments(filter);
 
     const res = {
       pagesCount: Math.ceil(totalCount / pageSize),
@@ -44,7 +45,7 @@ export const commentsRepository = {
   },
 
   async findById(id: string): Promise<CommentViewModel | null> {
-    const foundComment = await commentCollection.findOne({ _id: new ObjectId(id) });
+    const foundComment = await db.getCollections().commentCollection.findOne({ _id: new ObjectId(id) });
 
     if (!foundComment) {
       return null;
@@ -62,7 +63,7 @@ export const commentsRepository = {
   },
 
   async create(comment: Comment): Promise<CommentViewModel> {
-    const insertedResult = await commentCollection.insertOne(comment);
+    const insertedResult = await db.getCollections().commentCollection.insertOne(comment);
 
     return {
       id: insertedResult.insertedId.toString(),
@@ -76,7 +77,7 @@ export const commentsRepository = {
   },
 
   async update(id: string, dto: CommentInputDto): Promise<void> {
-    const updateResult = await commentCollection.updateOne(
+    const updateResult = await db.getCollections().commentCollection.updateOne(
       { _id: new ObjectId(id) },
       {
         $set: {
@@ -93,7 +94,7 @@ export const commentsRepository = {
   },
 
   async delete(id: string): Promise<void> {
-    const deleteResult = await commentCollection.deleteOne({
+    const deleteResult = await db.getCollections().commentCollection.deleteOne({
       _id: new ObjectId(id),
     });
 

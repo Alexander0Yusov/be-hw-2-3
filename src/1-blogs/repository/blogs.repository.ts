@@ -1,16 +1,13 @@
 import { RepositoryNotFoundError } from '../../core/errors/repository-not-found.error';
-import { blogCollection } from '../../db/mongo.db';
+import { db } from '../../db/mongo.db';
 import { BlogInputDto } from '../dto/blog-input.dto';
 import { BlogQueryInput } from '../router/input/blog-query.input';
 import { Blog } from '../types/blog';
 import { ObjectId, WithId } from 'mongodb';
 
 export const blogsRepository = {
-  async findMany(
-    queryDto: BlogQueryInput,
-  ): Promise<{ items: WithId<Blog>[]; totalCount: number }> {
-    const { pageNumber, pageSize, sortBy, sortDirection, searchNameTerm } =
-      queryDto;
+  async findMany(queryDto: BlogQueryInput): Promise<{ items: WithId<Blog>[]; totalCount: number }> {
+    const { pageNumber, pageSize, sortBy, sortDirection, searchNameTerm } = queryDto;
 
     const skip = (pageNumber - 1) * pageSize;
     const filter: any = {};
@@ -19,24 +16,25 @@ export const blogsRepository = {
       filter.name = { $regex: searchNameTerm, $options: 'i' };
     }
 
-    const items = await blogCollection
-      .find(filter)
+    const items = await db
+      .getCollections()
+      .blogCollection.find(filter)
       .sort({ [sortBy]: sortDirection })
       .skip(skip)
       .limit(pageSize)
       .toArray();
 
-    const totalCount = await blogCollection.countDocuments(filter);
+    const totalCount = await db.getCollections().blogCollection.countDocuments(filter);
 
     return { items, totalCount };
   },
 
   async findById(id: string): Promise<WithId<Blog> | null> {
-    return blogCollection.findOne({ _id: new ObjectId(id) });
+    return db.getCollections().blogCollection.findOne({ _id: new ObjectId(id) });
   },
 
   async findByIdOrFail(id: string): Promise<WithId<Blog>> {
-    const res = await blogCollection.findOne({ _id: new ObjectId(id) });
+    const res = await db.getCollections().blogCollection.findOne({ _id: new ObjectId(id) });
 
     if (!res) {
       throw new RepositoryNotFoundError('Blog not exist');
@@ -46,12 +44,12 @@ export const blogsRepository = {
   },
 
   async create(blog: Blog): Promise<WithId<Blog>> {
-    const insertedResult = await blogCollection.insertOne(blog);
+    const insertedResult = await db.getCollections().blogCollection.insertOne(blog);
     return { ...blog, _id: insertedResult.insertedId };
   },
 
   async update(id: string, dto: BlogInputDto): Promise<void> {
-    const updateResult = await blogCollection.updateOne(
+    const updateResult = await db.getCollections().blogCollection.updateOne(
       { _id: new ObjectId(id) },
       {
         $set: {
@@ -70,7 +68,7 @@ export const blogsRepository = {
   },
 
   async delete(id: string): Promise<void> {
-    const deleteResult = await blogCollection.deleteOne({
+    const deleteResult = await db.getCollections().blogCollection.deleteOne({
       _id: new ObjectId(id),
     });
 

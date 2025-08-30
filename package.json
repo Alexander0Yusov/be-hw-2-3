@@ -6,7 +6,9 @@
   "scripts": {
     "watch": "tsc -w",
     "dev": "nodemon --inspect dist/index.js",
-    "jest": "jest -i --detectOpenHandles",
+    "test:e2e": "jest --config jest-e2e.json --runInBand --detectOpenHandles --forceExit",
+    "test:integration": "jest --config jest-integration.json --runInBand --detectOpenHandles --forceExit",
+    "coverage": "jest --coverage",
     "lint": "eslint --fix .",
     "format": "prettier --write .",
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -17,15 +19,20 @@
   "license": "ISC",
   "packageManager": "pnpm@10.13.1",
   "dependencies": {
+    "@types/nodemailer": "^7.0.1",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
+    "date-fns": "^4.1.0",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "express-validator": "^7.2.1",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.18.0",
+    "mongodb-memory-server": "^10.2.0",
+    "nodemailer": "^7.0.5",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",

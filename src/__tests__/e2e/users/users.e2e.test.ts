@@ -4,7 +4,7 @@ import { setupApp } from '../../../setup-app';
 import { HttpStatus } from '../../../core/types/HttpStatus';
 import { TESTING_PATH, USERS_PATH } from '../../../core/paths/paths';
 import { generateBasicAuthToken } from '../../utils/generateBasicAuthToken';
-import { runDB, stopDB } from '../../../db/mongo.db';
+import { db } from '../../../db/mongo.db';
 import { SETTINGS } from '../../../core/settings/settings';
 import { createFakeUser } from '../../utils/users/create-fake-user';
 
@@ -13,7 +13,7 @@ describe('User API', () => {
   setupApp(app);
 
   beforeAll(async () => {
-    await runDB(SETTINGS.MONGO_URL);
+    await db.run(SETTINGS.MONGO_URL);
 
     await request(app)
       .delete(TESTING_PATH + '/all-data')
@@ -21,7 +21,7 @@ describe('User API', () => {
   });
 
   afterAll(async () => {
-    await stopDB();
+    await db.stop();
   });
 
   it('should create user; POST users', async () => {
@@ -46,8 +46,7 @@ describe('User API', () => {
 
     const userListResponse = await request(app)
       .get(
-        USERS_PATH +
-          '?pageSize=15&pageNumber=1&searchLoginTerm=keL&searchEmailTerm=ke&sortDirection=asc&sortBy=login',
+        USERS_PATH + '?pageSize=15&pageNumber=1&searchLoginTerm=keL&searchEmailTerm=ke&sortDirection=asc&sortBy=login',
       )
       .expect(HttpStatus.Ok);
 
@@ -67,9 +66,7 @@ describe('User API', () => {
       .set('Authorization', generateBasicAuthToken())
       .expect(HttpStatus.NoContent);
 
-    const userResponse = await request(app).get(
-      USERS_PATH + '/' + `${createResponse.body.id}`,
-    );
+    const userResponse = await request(app).get(USERS_PATH + '/' + `${createResponse.body.id}`);
 
     expect(userResponse.status).toBe(HttpStatus.NotFound);
   });

@@ -5,21 +5,16 @@ import { usersService } from '../../application/users.service';
 import { usersQwRepository } from '../../qw-repository/users-qw-repository';
 import { createErrorMessages } from '../../../core/utils/error.utils';
 
-export async function postUserHandler(
-  req: Request<{}, {}, UserInputModel>,
-  res: Response,
-) {
+export async function postUserHandler(req: Request<{}, {}, UserInputModel>, res: Response) {
   try {
-    const existsUserId = await usersQwRepository.findByEmailOrLogin(
-      req.body.login || req.body.email,
-    );
+    const existsUserId = await usersQwRepository.findByEmailOrLogin(req.body.login || req.body.email);
 
     if (existsUserId) {
       res.status(HttpStatus.BadRequest).send(
         createErrorMessages([
           {
-            field: 'email',
-            message: 'the email address is not unique',
+            field: 'email or login',
+            message: 'the email address or login is not unique',
           },
         ]),
       );

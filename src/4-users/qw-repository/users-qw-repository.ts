@@ -1,19 +1,19 @@
 import { ObjectId } from 'mongodb';
-import { userCollection } from '../../db/mongo.db';
+import { db } from '../../db/mongo.db';
 import { UserViewModel } from '../types/user-view-model';
 import { UserQueryInput } from '../router/input/user-query.input';
 import { mapToUserViewModel } from '../mappers/map-to-user-view-model.util';
 
 export const usersQwRepository = {
   async findById(id: string): Promise<UserViewModel | null> {
-    const user = await userCollection.findOne({ _id: new ObjectId(id) });
+    const user = await db.getCollections().userCollection.findOne({ _id: new ObjectId(id) });
 
     if (user) {
       return {
         id: user._id.toString(),
-        login: user.login,
-        email: user.email,
-        createdAt: user.createdAt,
+        login: user.accountData.login,
+        email: user.accountData.email,
+        createdAt: user.accountData.createdAt,
       };
     }
 
@@ -21,8 +21,8 @@ export const usersQwRepository = {
   },
 
   async findByEmailOrLogin(loginOrEmail: string): Promise<string | null> {
-    const user = await userCollection.findOne({
-      $or: [{ login: loginOrEmail }, { email: loginOrEmail }],
+    const user = await db.getCollections().userCollection.findOne({
+      $or: [{ 'accountData.login': loginOrEmail }, { 'accountData.email': loginOrEmail }],
     });
 
     if (user) {
@@ -33,24 +33,17 @@ export const usersQwRepository = {
   },
 
   async findHashById(id: string): Promise<string> {
-    const user = await userCollection.findOne({ _id: new ObjectId(id) });
+    const user = await db.getCollections().userCollection.findOne({ _id: new ObjectId(id) });
 
     if (!user) {
       throw new Error('Hash not found');
     }
 
-    return user.passwordHash;
+    return user.accountData.passwordHash;
   },
 
   async findMany(queryDto: UserQueryInput): Promise<any> {
-    const {
-      pageNumber,
-      pageSize,
-      sortBy,
-      sortDirection,
-      searchLoginTerm,
-      searchEmailTerm,
-    } = queryDto;
+    const { pageNumber, pageSize, sortBy, sortDirection, searchLoginTerm, searchEmailTerm } = queryDto;
 
     const skip = (pageNumber - 1) * pageSize;
 
@@ -58,25 +51,26 @@ export const usersQwRepository = {
     const orConditions: any[] = [];
 
     if (searchLoginTerm) {
-      orConditions.push({ login: { $regex: searchLoginTerm, $options: 'i' } });
+      orConditions.push({ 'accountData.login': { $regex: searchLoginTerm, $options: 'i' } });
     }
 
     if (searchEmailTerm) {
-      orConditions.push({ email: { $regex: searchEmailTerm, $options: 'i' } });
+      orConditions.push({ 'accountData.email': { $regex: searchEmailTerm, $options: 'i' } });
     }
 
     if (orConditions.length > 0) {
       filter.$or = orConditions;
     }
 
-    const items = await userCollection
-      .find(filter)
+    const items = await db
+      .getCollections()
+      .userCollection.find(filter)
       .sort({ [sortBy]: sortDirection })
       .skip(skip)
       .limit(pageSize)
       .toArray();
 
-    const totalCount = await userCollection.countDocuments(filter);
+    const totalCount = await db.getCollections().userCollection.countDocuments(filter);
 
     return {
       pagesCount: Math.ceil(totalCount / pageSize),

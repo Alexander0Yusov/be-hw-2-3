@@ -5,7 +5,7 @@ import { HttpStatus } from '../../../core/types/HttpStatus';
 import { createFakeBlog } from '../../utils/blogs/create-fake-blog';
 import { BLOGS_PATH, TESTING_PATH } from '../../../core/paths/paths';
 import { generateBasicAuthToken } from '../../utils/generateBasicAuthToken';
-import { runDB, stopDB } from '../../../db/mongo.db';
+import { db } from '../../../db/mongo.db';
 import { SETTINGS } from '../../../core/settings/settings';
 
 describe('Blog API body validation check', () => {
@@ -13,7 +13,7 @@ describe('Blog API body validation check', () => {
   setupApp(app);
 
   beforeAll(async () => {
-    await runDB(SETTINGS.MONGO_URL);
+    await db.run(SETTINGS.MONGO_URL);
 
     await request(app)
       .delete(TESTING_PATH + '/all-data')
@@ -21,14 +21,11 @@ describe('Blog API body validation check', () => {
   });
 
   afterAll(async () => {
-    await stopDB();
+    await db.stop();
   });
 
   it(`❌ should not create blog when incorrect body passed; POST /api/blogs`, async () => {
-    await request(app)
-      .post(BLOGS_PATH)
-      .send(createFakeBlog())
-      .expect(HttpStatus.Unauthorized);
+    await request(app).post(BLOGS_PATH).send(createFakeBlog()).expect(HttpStatus.Unauthorized);
 
     const invalidDataSet1 = await request(app)
       .post(BLOGS_PATH)
@@ -75,9 +72,7 @@ describe('Blog API body validation check', () => {
     expect(invalidDataSet3.body.errorsMessages).toHaveLength(3);
 
     // check что никто не создался
-    const blogListResponse = await request(app)
-      .get(BLOGS_PATH)
-      .set('Authorization', generateBasicAuthToken());
+    const blogListResponse = await request(app).get(BLOGS_PATH).set('Authorization', generateBasicAuthToken());
 
     expect(blogListResponse.body.items).toHaveLength(0);
   });
@@ -98,14 +93,12 @@ describe('Blog API body validation check', () => {
     expect(invalidDataSet1.body.errorMessages).toHaveLength(1);
 
     // check что никто не создался
-    const blogListResponse = await request(app)
-      .get(BLOGS_PATH)
-      .set('Authorization', generateBasicAuthToken());
+    const blogListResponse = await request(app).get(BLOGS_PATH).set('Authorization', generateBasicAuthToken());
 
     expect(blogListResponse.body.items).toHaveLength(0);
   });
 
-  it(`❌ should not get response when incorrect /:blogId passed; GET /api/blogs/:blogId/posts`, async () => {
+  it(`❌ should not get response ✔ when incorrect /:blogId passed; GET /api/blogs/:blogId/posts`, async () => {
     await request(app)
       .get(BLOGS_PATH + '/63189b06003380064c4193be' + '/posts')
       .expect(HttpStatus.NotFound);

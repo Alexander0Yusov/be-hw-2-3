@@ -2,14 +2,10 @@ import request from 'supertest';
 import express from 'express';
 import { setupApp } from '../../../setup-app';
 import { HttpStatus } from '../../../core/types/HttpStatus';
-import {
-  BLOGS_PATH,
-  POSTS_PATH,
-  TESTING_PATH,
-} from '../../../core/paths/paths';
+import { BLOGS_PATH, POSTS_PATH, TESTING_PATH } from '../../../core/paths/paths';
 import { generateBasicAuthToken } from '../../utils/generateBasicAuthToken';
 import { createFakePost } from '../../utils/posts/create-fake-post';
-import { runDB, stopDB } from '../../../db/mongo.db';
+import { db } from '../../../db/mongo.db';
 import { SETTINGS } from '../../../core/settings/settings';
 import { createFakeBlog } from '../../utils/blogs/create-fake-blog';
 
@@ -18,14 +14,14 @@ describe('Post API body validation check', () => {
   setupApp(app);
 
   beforeAll(async () => {
-    await runDB(SETTINGS.MONGO_URL);
+    await db.run(SETTINGS.MONGO_URL);
     await request(app)
       .delete(TESTING_PATH + '/all-data')
       .expect(HttpStatus.NoContent);
   });
 
   afterAll(async () => {
-    await stopDB();
+    await db.stop();
   });
 
   it(`❌ should not create post when incorrect body passed; POST /api/posts'`, async () => {
@@ -35,10 +31,7 @@ describe('Post API body validation check', () => {
       .send(createFakeBlog())
       .expect(HttpStatus.Created);
 
-    await request(app)
-      .post(POSTS_PATH)
-      .send(createFakePost(createdBlog.body.id))
-      .expect(HttpStatus.Unauthorized);
+    await request(app).post(POSTS_PATH).send(createFakePost(createdBlog.body.id)).expect(HttpStatus.Unauthorized);
 
     const invalidDataSet1 = await request(app)
       .post(POSTS_PATH)
