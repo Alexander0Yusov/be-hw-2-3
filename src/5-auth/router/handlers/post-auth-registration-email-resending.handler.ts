@@ -13,13 +13,10 @@ export async function postAuthRegistrationEmailResendingHandler(
 
   if (result.data) {
     res.sendStatus(resultCodeToHttpException(result.status));
+    return;
   }
 
   res
     .status(resultCodeToHttpException(result.status))
-    .send(
-      createErrorMessages([
-        { field: result?.extensions[0]?.field || '', message: result?.extensions[0]?.message || '' },
-      ]),
-    );
+    .send(createErrorMessages([{ field: 'email', message: result.extensions[0]?.message }]));
 }

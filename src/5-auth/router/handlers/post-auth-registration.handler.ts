@@ -13,13 +13,14 @@ export async function postAuthRegistrationHandler(req: Request<{}, {}, Registrat
 
   if (newUser.data) {
     res.sendStatus(resultCodeToHttpException(newUser.status));
+    return;
   }
 
   res
     .status(resultCodeToHttpException(newUser.status))
     .send(
       createErrorMessages([
-        { field: newUser?.extensions[0].field || '0', message: newUser.extensions[0].message || '0' },
+        { field: newUser?.extensions[0]?.field || '0', message: newUser?.extensions[0]?.message || '0' },
       ]),
     );
 }

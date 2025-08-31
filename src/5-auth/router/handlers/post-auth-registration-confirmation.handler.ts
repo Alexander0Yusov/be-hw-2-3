@@ -13,9 +13,7 @@ export async function postAuthRegistrationConfirmationHandler(req: Request<{}, {
     return;
   }
 
-  if (result.extensions.length > 0) {
-    res
-      .status(resultCodeToHttpException(result.status))
-      .send(createErrorMessages([{ field: result.extensions[0].field || '0', message: result.extensions[0].message }]));
-  }
+  res
+    .status(resultCodeToHttpException(result.status))
+    .send(createErrorMessages([{ field: 'code', message: result.extensions[0]?.message }]));
 }
