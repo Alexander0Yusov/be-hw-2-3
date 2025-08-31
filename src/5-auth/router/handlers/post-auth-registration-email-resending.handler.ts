@@ -18,6 +18,8 @@ export async function postAuthRegistrationEmailResendingHandler(
   res
     .status(resultCodeToHttpException(result.status))
     .send(
-      createErrorMessages([{ field: result.extensions[0].field || '', message: result.extensions[0].message || '' }]),
+      createErrorMessages([
+        { field: result?.extensions[0]?.field || '', message: result?.extensions[0]?.message || '' },
+      ]),
     );
 }

@@ -90,7 +90,7 @@ describe('Blog API body validation check', () => {
       })
       .expect(HttpStatus.NotFound);
 
-    expect(invalidDataSet1.body.errorMessages).toHaveLength(1);
+    expect(invalidDataSet1.body.errorsMessages).toHaveLength(1);
 
     // check что никто не создался
     const blogListResponse = await request(app).get(BLOGS_PATH).set('Authorization', generateBasicAuthToken());

@@ -11,6 +11,7 @@ import { User } from '../../4-users/types/user';
 import { usersService } from '../../4-users/application/users.service';
 import { nodemailerService } from '../adapters/nodemailer.service';
 import { emailExamples } from '../adapters/email-examples';
+import { db } from '../../db/mongo.db';
 
 export const authService = {
   async loginUser(loginOrEmail: string, password: string): Promise<Result<{ accessToken: string } | null>> {
@@ -65,12 +66,21 @@ export const authService = {
     const existsLogin = await usersRepository.findByEmailOrLogin(login);
     const existsEmail = await usersRepository.findByEmailOrLogin(email);
 
-    if (existsLogin || existsEmail) {
+    if (existsLogin) {
       return {
         status: ResultStatus.BadRequest,
         data: null,
         errorMessage: 'Bad Request',
-        extensions: [{ field: 'Email or login', message: 'Email or login already exists' }],
+        extensions: [{ field: 'login', message: 'Login already exists' }],
+      };
+    }
+
+    if (existsEmail) {
+      return {
+        status: ResultStatus.BadRequest,
+        data: null,
+        errorMessage: 'Bad Request',
+        extensions: [{ field: 'email', message: 'Email already exists' }],
       };
     }
 
@@ -85,7 +95,7 @@ export const authService = {
       );
 
       return {
-        status: ResultStatus.Success,
+        status: ResultStatus.NoContent,
         data: user,
         extensions: [],
       };
@@ -102,11 +112,14 @@ export const authService = {
   async confirmEmail(code: string): Promise<Result<true | null>> {
     const user = await usersRepository.findByCode(code);
 
+    console.log(4444, code);
+    console.log(5555, await db.getCollections().userCollection.find().toArray());
+
     if (!user || user!.emailConfirmation.expirationDate < new Date() || user!.emailConfirmation.isConfirmed) {
       return {
         status: ResultStatus.BadRequest,
         errorMessage: 'BadRequest',
-        extensions: [{ field: 'Code', message: 'The confirmation code is not found, expired or already been applied' }],
+        extensions: [{ field: 'code', message: 'The confirmation code is not found, expired or already been applied' }],
         data: null,
       };
     }
@@ -127,7 +140,7 @@ export const authService = {
       return {
         status: ResultStatus.BadRequest,
         errorMessage: 'BadRequest',
-        extensions: [{ field: 'Email', message: 'Email not found' }],
+        extensions: [{ field: 'email', message: 'Email not found' }],
         data: null,
       };
     }
@@ -136,7 +149,7 @@ export const authService = {
       return {
         status: ResultStatus.BadRequest,
         errorMessage: 'BadRequest',
-        extensions: [{ field: 'Email', message: 'Email already been confirmed' }],
+        extensions: [{ field: 'email', message: 'Email already been confirmed' }],
         data: null,
       };
     }

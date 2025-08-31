@@ -6,6 +6,12 @@ export const resultCodeToHttpException = (resultCode: ResultStatus): number => {
     case ResultStatus.Success:
       return HttpStatus.Ok;
 
+    case ResultStatus.Created:
+      return HttpStatus.Created;
+
+    case ResultStatus.NoContent:
+      return HttpStatus.NoContent;
+
     case ResultStatus.NotFound:
       return HttpStatus.NotFound;
 
