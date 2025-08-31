@@ -112,14 +112,23 @@ export const authService = {
   async confirmEmail(code: string): Promise<Result<true | null>> {
     const user = await usersRepository.findByCode(code);
 
-    console.log(4444, code);
-    console.log(5555, await db.getCollections().userCollection.find().toArray());
+    // console.log(4444, code);
+    // console.log(5555, await db.getCollections().userCollection.find().toArray());
 
-    if (!user || user!.emailConfirmation.expirationDate < new Date() || user!.emailConfirmation.isConfirmed) {
+    if (!user) {
       return {
         status: ResultStatus.BadRequest,
         errorMessage: 'BadRequest',
-        extensions: [{ field: 'code', message: 'The confirmation code is not found, expired or already been applied' }],
+        extensions: [{ field: 'code', message: 'The confirmation code is not found' }],
+        data: null,
+      };
+    }
+
+    if (user.emailConfirmation.expirationDate < new Date() || user.emailConfirmation.isConfirmed) {
+      return {
+        status: ResultStatus.BadRequest,
+        errorMessage: 'BadRequest',
+        extensions: [{ field: 'code', message: 'The confirmation code expired or already been applied' }],
         data: null,
       };
     }

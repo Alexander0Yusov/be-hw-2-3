@@ -10,13 +10,12 @@ export async function postAuthRegistrationConfirmationHandler(req: Request<{}, {
 
   if (result.data) {
     res.sendStatus(resultCodeToHttpException(result.status));
+    return;
   }
 
-  res
-    .status(resultCodeToHttpException(result.status))
-    .send(
-      createErrorMessages([
-        { field: result?.extensions[0]?.field || '0', message: result?.extensions[0]?.message || '0' },
-      ]),
-    );
+  if (result.extensions.length > 0) {
+    res
+      .status(resultCodeToHttpException(result.status))
+      .send(createErrorMessages([{ field: result.extensions[0].field || '0', message: result.extensions[0].message }]));
+  }
 }
