@@ -62,6 +62,18 @@ export const authService = {
   },
 
   async registerUser(login: string, email: string, password: string): Promise<Result<WithId<User> | null>> {
+    const existsLogin = await usersRepository.findByEmailOrLogin(login);
+    const existsEmail = await usersRepository.findByEmailOrLogin(email);
+
+    if (existsLogin || existsEmail) {
+      return {
+        status: ResultStatus.BadRequest,
+        data: null,
+        errorMessage: 'Bad Request',
+        extensions: [{ field: 'Email or login', message: 'Email or login already exists' }],
+      };
+    }
+
     const userId = await usersService.create({ login, email, password });
     const user = await usersRepository.findById(userId);
 

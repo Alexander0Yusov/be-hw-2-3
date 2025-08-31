@@ -53,19 +53,59 @@ describe('AUTH-INTEGRATION', () => {
     });
   });
 
-  // it('should create user; POST /auth/registration', async () => {
-  //   await request(app)
-  //     .post(AUTH_PATH + '/registration')
-  //     .send({
-  //       login: 'yusovsky2',
-  //       email: `yusovsky2@gmail.com`,
-  //       password: 'qwerty123',
-  //     })
-  //     .expect(HttpStatus.Created);
+  describe('Confirm email', () => {
+    const confirmEmailUseCase = authService.confirmEmail;
 
-  //   await request(app)
-  //     .post(AUTH_PATH + '/registration-confirmation')
-  //     .send({ code: '' })
-  //     .expect(HttpStatus.Ok);
-  // });
+    it('should not confirm email if user does not exist', async () => {
+      const result = await confirmEmailUseCase('bnfgndflkgmk');
+
+      expect(result.status).toBe(ResultStatus.BadRequest);
+    });
+
+    it('should not confirm email which is confirmed', async () => {
+      const code = 'test';
+
+      const { login, pass, email } = testSeeder.createUserDto();
+      await testSeeder.insertUser({
+        login,
+        pass,
+        email,
+        code,
+        isConfirmed: true,
+      });
+
+      const result = await confirmEmailUseCase(code);
+
+      expect(result.status).toBe(ResultStatus.BadRequest);
+    });
+
+    it('should not confirm email with expired code', async () => {
+      const code = 'test';
+
+      const { login, pass, email } = testSeeder.createUserDto();
+      await testSeeder.insertUser({
+        login,
+        pass,
+        email,
+        code,
+        expirationDate: new Date(),
+      });
+
+      const result = await confirmEmailUseCase(code);
+
+      expect(result.status).toBe(ResultStatus.BadRequest);
+      //check status in DB
+    });
+
+    it('confirm user', async () => {
+      const code = '123e4567-e89b-12d3-a456-426614174000';
+
+      const { login, pass, email } = testSeeder.createUserDto();
+      await testSeeder.insertUser({ login, pass, email, code });
+
+      const result = await confirmEmailUseCase(code);
+
+      expect(result.status).toBe(ResultStatus.NoContent);
+    });
+  });
 });
